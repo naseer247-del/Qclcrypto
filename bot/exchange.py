@@ -11,6 +11,7 @@ class Exchange:
             "apiKey": os.environ.get("EXCHANGE_API_KEY"),
             "secret": os.environ.get("EXCHANGE_API_SECRET"),
             "enableRateLimit": True,
+            "options": {"defaultType": "spot"},
         })
         if cfg.get("testnet"):
             self.client.set_sandbox_mode(True)
