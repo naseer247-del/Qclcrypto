@@ -1,8 +1,11 @@
 exchange:
-  name: bybit
-  testnet: true
+  name: kraken
+  testnet: false
   symbol: BTC/USDT
   timeframe: 4h
+
+mode:
+  dry_run: true
 
 strategy:
   ema_fast: 12
