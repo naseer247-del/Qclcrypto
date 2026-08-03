@@ -1,5 +1,5 @@
 exchange:
-  name: binance
+  name: bybit
   testnet: true
   symbol: BTC/USDT
   timeframe: 4h
