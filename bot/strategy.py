@@ -1,10 +1,32 @@
-import pandas_ta as ta
+def ema(series, length):
+    return series.ewm(span=length, adjust=False).mean()
+
+def rsi(series, length):
+    delta = series.diff()
+    gain = delta.clip(lower=0)
+    loss = -delta.clip(upper=0)
+    avg_gain = gain.rolling(length).mean()
+    avg_loss = loss.rolling(length).mean()
+    rs = avg_gain / avg_loss.replace(0, 1e-10)
+    return 100 - (100 / (1 + rs))
+
+def atr(df, length=14):
+    high, low, close = df["high"], df["low"], df["close"]
+    prev_close = close.shift(1)
+    tr = pd.concat([
+        high - low,
+        (high - prev_close).abs(),
+        (low - prev_close).abs()
+    ], axis=1).max(axis=1)
+    return tr.rolling(length).mean()
+
+import pandas as pd
 
 def generate_signal(df, cfg):
-    df["ema_fast"] = ta.ema(df["close"], length=cfg["ema_fast"])
-    df["ema_slow"] = ta.ema(df["close"], length=cfg["ema_slow"])
-    df["rsi"] = ta.rsi(df["close"], length=cfg["rsi_period"])
-    df["atr"] = ta.atr(df["high"], df["low"], df["close"], length=14)
+    df["ema_fast"] = ema(df["close"], cfg["ema_fast"])
+    df["ema_slow"] = ema(df["close"], cfg["ema_slow"])
+    df["rsi"] = rsi(df["close"], cfg["rsi_period"])
+    df["atr"] = atr(df, 14)
     df = df.dropna().reset_index(drop=True)
     if len(df) < 2:
         return "HOLD", df
