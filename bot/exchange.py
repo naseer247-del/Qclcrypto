@@ -8,10 +8,9 @@ class Exchange:
         self.timeframe = cfg["timeframe"]
         klass = getattr(ccxt, cfg["name"])
         self.client = klass({
-            "apiKey": os.environ.get("EXCHANGE_API_KEY"),
-            "secret": os.environ.get("EXCHANGE_API_SECRET"),
+            "apiKey": os.environ.get("EXCHANGE_API_KEY") or None,
+            "secret": os.environ.get("EXCHANGE_API_SECRET") or None,
             "enableRateLimit": True,
-            "options": {"defaultType": "spot"},
         })
         if cfg.get("testnet"):
             self.client.set_sandbox_mode(True)
