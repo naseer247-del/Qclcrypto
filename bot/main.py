@@ -65,6 +65,8 @@ def main():
     atr = df.iloc[-1]["atr"]
 
     pos = state.get("position")
+    pos_txt = f"open {pos['side']} @ {pos['entry']:.2f}" if pos else "none"
+    send(f"[STATUS] price {price:.2f} | signal {signal} | position {pos_txt} | balance {balance:.2f}")
 
     if pos is None and signal == "BUY":
         qty = position_size(balance, price, atr, cfg["risk"])
