@@ -17,7 +17,13 @@ def load_state(path):
     if os.path.exists(path):
         with open(path) as f:
             return json.load(f)
-    return {"position": None, "day_start_balance": None, "day": None, "enabled": True}
+    return {
+        "position": None,
+        "day_start_balance": None,
+        "day": None,
+        "enabled": True,
+        "paper_balance": None,
+    }
 
 def save_state(path, state):
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -26,6 +32,7 @@ def save_state(path, state):
 
 def main():
     cfg = load_cfg()
+    dry_run = cfg.get("mode", {}).get("dry_run", True)
     state_path = os.path.join(os.path.dirname(__file__), "..", cfg["state_file"])
     state = load_state(state_path)
 
@@ -34,7 +41,13 @@ def main():
         return
 
     ex = Exchange(cfg["exchange"])
-    balance = ex.get_balance_usdt()
+
+    if dry_run:
+        if state.get("paper_balance") is None:
+            state["paper_balance"] = cfg["risk"]["starting_balance_usd"]
+        balance = state["paper_balance"]
+    else:
+        balance = ex.get_balance_usdt()
 
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     if state.get("day") != today:
@@ -56,11 +69,13 @@ def main():
     if pos is None and signal == "BUY":
         qty = position_size(balance, price, atr, cfg["risk"])
         if qty > 0:
-            ex.market_buy(qty)
+            if not dry_run:
+                ex.market_buy(qty)
             sl = stop_loss_price(price, atr, cfg["risk"], "long")
             tp = take_profit_price(price, atr, cfg["risk"], "long")
             state["position"] = {"side": "long", "entry": price, "qty": qty, "sl": sl, "tp": tp}
-            send(f"BUY {qty:.6f} @ {price:.2f} | SL {sl:.2f} | TP {tp:.2f}")
+            tag = "[PAPER] " if dry_run else ""
+            send(f"{tag}BUY {qty:.6f} @ {price:.2f} | SL {sl:.2f} | TP {tp:.2f}")
 
     elif pos is not None:
         side = pos["side"]
@@ -69,9 +84,14 @@ def main():
         exit_signal = signal == "SELL" if side == "long" else signal == "BUY"
 
         if hit_sl or hit_tp or exit_signal:
-            ex.market_sell(pos["qty"])
+            if not dry_run:
+                ex.market_sell(pos["qty"])
+            else:
+                pnl = (price - pos["entry"]) * pos["qty"] if side == "long" else (pos["entry"] - price) * pos["qty"]
+                state["paper_balance"] = state["paper_balance"] + pnl
             reason = "SL" if hit_sl else "TP" if hit_tp else "SIGNAL"
-            send(f"SELL {pos['qty']:.6f} @ {price:.2f} | reason {reason}")
+            tag = "[PAPER] " if dry_run else ""
+            send(f"{tag}SELL {pos['qty']:.6f} @ {price:.2f} | reason {reason} | balance {state.get('paper_balance', balance):.2f}")
             state["position"] = None
 
     save_state(state_path, state)
