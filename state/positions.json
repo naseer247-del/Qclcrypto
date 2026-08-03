@@ -1,1 +1,7 @@
-{"position": null, "day_start_balance": null, "day": null, "enabled": true}
+{
+  "position": null,
+  "day_start_balance": 50,
+  "day": "2026-08-03",
+  "enabled": true,
+  "paper_balance": 50
+}
