@@ -1,5 +1,11 @@
 {
-  "position": null,
+  "position": {
+    "side": "long",
+    "entry": 63819.4,
+    "qty": 0.0004456781948759739,
+    "sl": 62697.514285714286,
+    "tp": 65502.228571428575
+  },
   "day_start_balance": 50,
   "day": "2026-08-04",
   "enabled": true,
